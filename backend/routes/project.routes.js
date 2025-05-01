@@ -21,7 +21,7 @@ router.put('/add-user',
     projectController.addUserToProject
 )
 
-router.get('/get-project/:projectId',
+router.get('/get-project/:roomId',
     authMiddleware.authUser,
     projectController.getProjectId
 )
@@ -35,7 +35,7 @@ router.get('/check-room/:roomId',
 router.post('/join',authMiddleware.authUser,projectController.joinProject);
 
 
-router.put('/update/:projectId',
+router.put('/update/:roomId',
     authMiddleware.authUser,
     projectController.updateCode
 );

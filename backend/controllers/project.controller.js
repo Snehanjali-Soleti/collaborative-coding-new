@@ -62,17 +62,23 @@ export const addUserToProject = async(req, res)=>{
     }
 } 
 
-export const getProjectId= async(req, res) =>{
-    
-    const {projectId} = req.params;
-    try{
-        const project = await projectService.getProjectId({projectId});
-        res.status(200).json({project})
-    }catch(err){
-        console.log(err)
-        res.status(400).send(err.message);
+export const getProjectId = async (req, res) => {
+    const { roomId } = req.params;
+    try {
+      const project = await projectModel
+        .findOne({ roomId })
+        .populate('users', 'userName email'); // Populate userName and email fields
+  
+      if (!project) {
+        return res.status(404).json({ message: 'Project not found' });
+      }
+  
+      res.status(200).json({ project });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: 'Server error' });
     }
-}
+  };
 
 export const checkRoomId = async(req, res) =>{
     const {roomId} = req.params;
@@ -126,14 +132,25 @@ export const joinProject = async(req, res) =>{
     };
 
 
-export const updateCode = async(req, res) =>{
-    const {projectId} = req.params;
-    const {code} = req.body;
-    try{
-        const project = await projectService.updateCode({projectId, code});
-        res.status(200).json({project})
-    }catch(err){
-        console.log(err)
-        res.status(400).send(err.message);
-    }
-}
+    export const updateCode = async (req, res) => {
+        const { code } = req.body;
+        const { roomId } = req.params; // <-- use params here
+      
+        try {
+          const project = await projectModel.findOneAndUpdate(
+            { roomId },
+            { code },
+            { new: true }
+          );
+      
+          if (!project) {
+            return res.status(404).json({ message: "Project not found" });
+          }
+      
+          res.status(200).json({ project });
+        } catch (err) {
+          console.error(err);
+          res.status(400).send(err.message);
+        }
+      };
+      

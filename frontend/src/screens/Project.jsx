@@ -15,6 +15,8 @@ const Project = () => {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]); // State to store all messages
   const { user, openChat, setOpenChat } = useContext(UserContext);
+  const [presentUsers, setPresentUsers] = useState([]);
+  const [roomId, setRoomId] = useState(project?.roomId);
 
   function SyntaxhighlightedCode(props) {
     const ref = useRef (null)
@@ -71,13 +73,62 @@ const Project = () => {
     setMessages((prevMessages) => [...prevMessages, messageObject]);
   };
 
+const handleUserClick = (e,userId) => {
+  e.stopPropagation(); // Prevent the click event from bubbling up to the modal background
+  setSelectedUserIds((prevSelectedUserIds) => {
+    if (prevSelectedUserIds.includes(userId)) {
+      return prevSelectedUserIds.filter(id => id !== userId);
+    } else {
+      return [...prevSelectedUserIds, userId];
+    }
+  });
+};
+
+ // console.log(location.state)
+const handleAddCollaborators = () => {
+  //console.log('Selected User IDs:', selectedUserIds);
+  axios.put('/projects/add-user',{
+      projectId: project._id,
+      users: selectedUserIds
+  })
+  .then(res=>{setPresentUsers(res.data.project.users)})
+  .catch(err=>{
+      console.log(err)
+  })
+  setIsModalOpen(false);
+};
+
+useEffect(() => {
+  // Fetch users from the backend
+  axios.get('/users/all') // Replace with your actual API endpoint
+    .then((response) => {
+      setUsers(response.data.users); // Fallback to an empty array if "users" is undefined
+      //console.log('Users:', response.data.users);
+    })
+    .catch((error) => {
+      console.error('Error fetching users:', error);
+    });
+
+    axios.get(`/projects/get-project/${roomId}`)
+    .then((res) => {
+      //console.log('Project:', res.data.project);
+      setPresentUsers(res.data.project.users);
+    }) 
+    .catch((err) => {
+      console.error('Error fetching project:', err);
+    });   
+}, [users]);
+
+
+
+  
   return (
     <main className="h-screen w-screen flex">
       <section className="left h-full w-1/4 bg-gray-800 flex flex-col relative">
         <header className="flex justify-between p-2 py-3 px-2 w-full bg-gray-600">
           <button
             className="flex flex-row items-center justify-center hover:cursor-pointer"
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => setIsModalOpen(!isModalOpen)}
           >
             <i className="ri-add-line"></i>
             <p className="text-sm pl-1">Add collaborator</p>
@@ -121,6 +172,31 @@ const Project = () => {
             ))}
           </div>
         </div>
+
+        <div className={`sidePanel w-full h-full absolute bg-gray-800 transition-all duration-300 ${isSidePanelOpen ? 'translate-x-0' : 'translate-x-[-100%]'}`}>
+          <header className='flex justify-between items-center p-2 px-4 w-full bg-gray-600'>
+            <div className="left flex flex-row px-2">
+            <i class="ri-team-fill"></i>
+                <p className='pl-2 font-semibold '>
+                    Collaborators
+                </p>
+             </div>
+            <button className='p-2' onClick={() => setIsSidePanelOpen(!isSidePanelOpen)}>
+              <i className="ri-close-fill"></i>
+            </button>
+          </header>
+          <div className="users flex-grow flex flex-col">
+            {presentUsers.map(user => (
+              <div key={user._id} className={`user flex flex-grow items-center hover:bg-slate-200 p-3 cursor-pointer ${selectedUserIds.includes(user._id) ? 'bg-slate-200' : ''}`} onClick={() => handleUserClick(user._id)}>
+                <div className='bg-slate-600 text-white aspect-square w-8 h-8 flex justify-center items-center rounded-full'>
+                  <i className="ri-user-fill"></i>
+                </div>
+                <div className="username pl-2 text-white ">{user.email}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="input-field w-full flex">
           <input
             value={message}
@@ -136,26 +212,26 @@ const Project = () => {
             <i className="ri-send-plane-fill"></i>
           </button>
         </div>
+
       </section>
 
       {isModalOpen && (
         <div
           className="fixed inset-0 bg-opacity-50 flex items-center justify-center absolute"
-          onClick={() => setIsModalOpen(false)}
+          onClick={() => setIsModalOpen(!isModalOpen)}
         >
           <div
-            className="bg-gray-600 p-6 rounded-lg shadow-lg w-full max-w-md"
-            onClick={(e) => e.stopPropagation()}
+            className="bg-gray-600 p-6 rounded-lg shadow-lg w-full max-w-md"      
           >
             <h2 className="text-2xl font-bold mb-4">Select Users</h2>
             <div className="users flex flex-col gap-1 max-h-60 overflow-auto">
-              {users.map((user) => (
+              {Array.isArray(users) && users.map((user) => (
                 <div
                   key={user._id}
                   className={`user flex items-center hover:bg-gray-700 p-3 rounded cursor-pointer ${
                     selectedUserIds.includes(user._id) ? 'bg-slate-200' : ''
                   }`}
-                  onClick={() => handleUserClick(user._id)}
+                  onClick={(e) => handleUserClick(e,user._id)}
                 >
                   <div className="bg-gray-500 text-white aspect-square w-8 h-8 flex justify-center items-center rounded-full">
                     <i className="ri-user-fill"></i>
@@ -167,7 +243,9 @@ const Project = () => {
             <div className="flex justify-center mt-4">
               <button
                 className="py-2 px-4 bg-blue-600 text-white rounded hover:bg-gray-700 transition duration-200"
-                onClick={handleAddCollaborators}
+                onClick={handleAddCollaborators
+                  
+                }
               >
                 Add collaborators
               </button>
@@ -175,6 +253,7 @@ const Project = () => {
           </div>
         </div>
       )}
+      
     </main>
   );
 };

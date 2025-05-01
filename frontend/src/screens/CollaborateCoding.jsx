@@ -4,7 +4,7 @@ import Editor from "@monaco-editor/react";
 import { UserContext } from '../context/user.context';
 import { useLocation } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
-import axios from "axios";
+import axios from '../config/axios';
 import Project  from "./Project";
 import UserAuth from "../auth/UserAuth";
 
@@ -31,18 +31,19 @@ const CollaborateCoding = () => {
 
    const navigate = useNavigate();
 
-   useEffect(() => {
-    if (!roomId || !code) return;
+  //  useEffect(() => {
+  //   if (!roomId || !code) return;
   
-    axios
-      .put(`/projects/update-code/${roomId}`, { code })
-      .then((res) => {
-        console.log('Code saved:', res.data);
-      })
-      .catch((err) => {
-        console.error(err);
-      });
-  }, [roomId, code]); // Run only when roomId or code changes
+  //   axios
+  //     .put(`/projects/update/${roomId}`, { code })
+  //     .then((res) => {
+  //       console.log('Code saved:', res.data);
+  //       setProject(res.data.project); // Update the project state with the new code
+  //     })
+  //     .catch((err) => {
+  //       console.error(err);
+  //     });
+  // }, [roomId, code]); // Run only when roomId or code changes
 
 
   useEffect(() => {
@@ -127,6 +128,16 @@ const CollaborateCoding = () => {
   };
 
   const leaveRoom = () => {
+    axios
+      .put(`/projects/update/${roomId}`, { code })
+      .then((res) => {
+        console.log('Code saved:', res.data);
+        setProject(res.data.project); // Update the project state with the new code
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+
     socket.emit("leaveRoom");
     setRoomId("");
     setUsername("");

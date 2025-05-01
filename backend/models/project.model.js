@@ -20,7 +20,6 @@ const projectSchema = new mongoose.Schema({
     }],
     code: {
         type: String, // Store the code as a string
-        default: "// Start coding here", // Default code snippet
       }
 })
 
